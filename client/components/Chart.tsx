@@ -13,8 +13,9 @@ export default function Chart() {
       symbol: 'BFX/BTC',
       container_id: tvChartContainerId,
       datafeed,
-      interval: '1D',
-      locale: 'ko'
+      interval: '1',
+      locale: 'ko',
+      timezone: 'Asia/Seoul'
     }
 
     tvWidget.current = new widget(widgetOptions)
