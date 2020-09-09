@@ -1,9 +1,13 @@
-import { SubscribeBarsCallback, Bar } from 'shared/chartingLibrary/charting_library.min';
-import dayjs from 'dayjs'
+import dayjs from 'dayjs';
+import { SERVER_URL } from 'public/constants';
+import { Bar, SubscribeBarsCallback } from 'shared/chartingLibrary/charting_library.min';
 
-const socket = new WebSocket('ws://localhost:10000/transactionHistory');
+const socket = new WebSocket(`ws://${SERVER_URL}/transactionHistory`);
 
 function initSocket(onRealtimeCallback: SubscribeBarsCallback, lastBarCache: Bar) {
+  /**
+   * 마지막으로 캔들스틱 그래프에 반영된 거래내역 시간
+   */
   let lastlyCheckedTransactionDate = dayjs(-1);
 
   socket.addEventListener('open', () => {
@@ -20,7 +24,16 @@ function initSocket(onRealtimeCallback: SubscribeBarsCallback, lastBarCache: Bar
 
     const { data } = JSON.parse(message.data) as { data: History[] }
     
+    /**
+     * 다음 캔들스틱이 시작해야할 시간
+     */
     const nextBarTime = dayjs(lastBarCache.time).add(1, 'minute').startOf('minute')
+
+    /**
+     * 현 캔들스틱에 반영될 1분 내외의 거래내역들
+     * 마지막 캔들스틱 시작시간 이후이자 마지막 거래내역 이후이며, 다음 캔들스틱보다 이전이여야 함.
+     * 주의: 1분 내외 거래내역이 존재하지 않지만, 2분후의 거래내역이 존재할 수 있다. 그래서 다음 nextTransactions 를 사용
+     */
     let newTransactions = data.filter(({ transaction_date }) => {
       const dateValue = dayjs(transaction_date).valueOf()
       return (
@@ -30,18 +43,15 @@ function initSocket(onRealtimeCallback: SubscribeBarsCallback, lastBarCache: Bar
       )
     })
 
+    /**
+     * 바로 다음 캔들스틱에 대한 거래내역이 없다면, 다음 2번째 캔들스틱에 반영하기 위한 거래내역들
+     */
     const nextTransactions = data.filter(({transaction_date}) => {
       return dayjs(transaction_date).valueOf() >= nextBarTime.valueOf()
     })
 
-    newTransactions.sort((a, b) => dayjs(a.transaction_date).valueOf() - dayjs(b.transaction_date).valueOf())
-
     if (newTransactions.length === 0 && nextTransactions.length === 0) {
       // 신규 거래내역이 없음
-      console.log({ data, 
-        lastbarcache: dayjs(lastBarCache.time).format('hh:mm:ss'),
-        lastlyCheckedTransactionDate: lastlyCheckedTransactionDate.format('hh:mm:ss'), 
-        nextBarTime: nextBarTime.format('hh:mm:ss') })
       return
     }
     if (newTransactions.length === 0 && nextTransactions.length > 0) {
@@ -53,6 +63,8 @@ function initSocket(onRealtimeCallback: SubscribeBarsCallback, lastBarCache: Bar
         return dayjs(transaction_date).isBefore(nextNextBarTime)
       })
     }
+
+    newTransactions.sort((a, b) => dayjs(a.transaction_date).valueOf() - dayjs(b.transaction_date).valueOf())
 
     lastlyCheckedTransactionDate = dayjs(newTransactions[newTransactions.length - 1].transaction_date)
 
@@ -66,6 +78,7 @@ function initSocket(onRealtimeCallback: SubscribeBarsCallback, lastBarCache: Bar
     const close = parseInt(newTransactions[newTransactions.length - 1].price)
 
     let bar: Bar;
+
     const shouldDrawNewCandlestick = startDate.valueOf() >= nextBarTime.startOf('minute').valueOf()
     if (shouldDrawNewCandlestick) {
       console.log('new bar created!')

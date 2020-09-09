@@ -1,3 +1,4 @@
+import { SERVER_URL } from 'public/constants';
 import { Bar, DatafeedConfiguration, IBasicDataFeed, LibrarySymbolInfo } from '../chartingLibrary/charting_library.min';
 import { subscribeOnStream, unsubscribeFromStream } from './streaming';
 
@@ -27,7 +28,7 @@ const symbolInfo: LibrarySymbolInfo = {
 
 async function getHisotricCandlesticks() {
 	try {
-		const res = await fetch(`http://localhost:10000/historic`, {
+		const res = await fetch(`http://${SERVER_URL}/historic`, {
 			method: 'GET'
 		})
 		return res.json()
@@ -64,11 +65,12 @@ export const datafeed: IBasicDataFeed = {
 				.filter(([time]) => time / 1000 >= from && time / 1000 < to)
 				.map(([time, open, close, high, low]) => {
 					return ({ 
-					time,
-					open: parseInt(open, 10),
-					close: parseInt(close, 10),
-					high: parseInt(high, 10),
-					low: parseInt(low, 10) })
+						time,
+						open: parseInt(open, 10),
+						close: parseInt(close, 10),
+						high: parseInt(high, 10),
+						low: parseInt(low, 10)
+					})
 				})
 
 			if (firstDataRequest) {
