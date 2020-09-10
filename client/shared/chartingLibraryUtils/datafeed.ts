@@ -28,7 +28,7 @@ const symbolInfo: LibrarySymbolInfo = {
 
 async function getHisotricCandlesticks() {
 	try {
-		const res = await fetch(`http://${SERVER_URL}/historic`, {
+		const res = await fetch(`${SERVER_URL}/historic`, {
 			method: 'GET'
 		})
 		return res.json()

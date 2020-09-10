@@ -1,8 +1,8 @@
 import dayjs from 'dayjs';
-import { SERVER_URL } from 'public/constants';
+import { WS_URL } from 'public/constants';
 import { Bar, SubscribeBarsCallback } from 'shared/chartingLibrary/charting_library.min';
 
-const socket = new WebSocket(`ws://${SERVER_URL}/transactionHistory`);
+const socket = new WebSocket(`${WS_URL}/transactionHistory`);
 
 function initSocket(onRealtimeCallback: SubscribeBarsCallback, lastBarCache: Bar) {
   /**
